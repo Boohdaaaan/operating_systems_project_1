@@ -65,11 +65,39 @@ static void run_command(char **args) {
     free(prog);
 }
 
+static void set_path(char **args, int argc) {
+    for (int i = 0; i < npaths; i++)
+        free(paths[i]);
+    free(paths);
+
+    npaths = argc;
+    paths = malloc((argc > 0 ? argc : 1) * sizeof(char *));
+    for (int i = 0; i < argc; i++)
+        paths[i] = strdup(args[i]);
+}
+
+static int run_builtin(char **args, int argc) {
+    if (strcmp(args[0], "exit") == 0) {
+        if (argc != 1)
+            print_error();
+        else
+            exit(0);
+    } else if (strcmp(args[0], "cd") == 0) {
+        if (argc != 2 || chdir(args[1]) != 0)
+            print_error();
+    } else if (strcmp(args[0], "path") == 0) {
+        set_path(args + 1, argc - 1);
+    } else {
+        return 0;
+    }
+    return 1;
+}
+
 static void process_line(char *line) {
     int argc;
     char **args = split_args(line, &argc);
 
-    if (argc > 0)
+    if (argc > 0 && !run_builtin(args, argc))
         run_command(args);
     free(args);
 }
