@@ -123,25 +123,46 @@ static int run_builtin(char **args, int argc) {
     return 1;
 }
 
-static void process_line(char *line) {
+static pid_t run_segment(char *cmd) {
     char *outfile;
-    if (parse_redirect(line, &outfile) < 0) {
+    if (parse_redirect(cmd, &outfile) < 0) {
         print_error();
-        return;
+        return -1;
     }
 
     int argc;
-    char **args = split_args(line, &argc);
+    char **args = split_args(cmd, &argc);
+    pid_t pid = -1;
 
     if (argc == 0) {
         if (outfile != NULL)
             print_error();
     } else if (!run_builtin(args, argc)) {
-        pid_t pid = run_command(args, outfile);
-        if (pid > 0)
-            waitpid(pid, NULL, 0);
+        pid = run_command(args, outfile);
     }
     free(args);
+    return pid;
+}
+
+static void process_line(char *line) {
+    int cap = 4, n = 0;
+    pid_t *pids = malloc(cap * sizeof(pid_t));
+    char *cmd;
+
+    while ((cmd = strsep(&line, "&")) != NULL) {
+        pid_t pid = run_segment(cmd);
+        if (pid <= 0)
+            continue;
+        if (n == cap) {
+            cap *= 2;
+            pids = realloc(pids, cap * sizeof(pid_t));
+        }
+        pids[n++] = pid;
+    }
+
+    for (int i = 0; i < n; i++)
+        waitpid(pids[i], NULL, 0);
+    free(pids);
 }
 
 int main(int argc, char *argv[]) {
