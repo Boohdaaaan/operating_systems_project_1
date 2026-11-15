@@ -1,9 +1,11 @@
-# wish
+# Лабораторна робота №1 
+**з дисципліни «Операційні системи з розподілом часу».**
 
-Simple Unix shell in C, based on the
+
+Просте Unix ядро на C, основане на
 [OSTEP processes-shell project](https://github.com/remzi-arpacidusseau/ostep-projects/tree/master/processes-shell).
 
-## Build and test
+## Збірка та тестування
 
 ```
 cd processes-shell
